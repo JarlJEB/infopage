@@ -1,90 +1,103 @@
-// pages/index.js
-import { useState, useEffect, useRef } from "react";
-import Head from "next/head";
+import { useState, useEffect } from 'react';
 
-export default function Home() {
+export default function InfoPage() {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [placeholder, setPlaceholder] = useState("Spør meg om Skillhouse...");
-  const containerRef = useRef(null);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    const userMessage = input;
-    setMessages((prev) => [...prev, { sender: "user", text: userMessage }]);
-    setInput("");
-    setPlaceholder("Takk! Spør gjerne om noe mer...");
-
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ message: userMessage }),
-    });
-
-    const data = await response.json();
-    setMessages((prev) => [...prev, { sender: "bot", text: data.reply }]);
-  };
+  const [input, setInput] = useState('');
+  const [placeholder, setPlaceholder] = useState('');
+  const [messageCount, setMessageCount] = useState(0);
 
   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
-    }
-  }, [messages]);
+    const intro = "Hei! Hva lurer du på?";
+    const words = intro.split(' ');
+    let i = 0;
+    const interval = setInterval(() => {
+      setMessages([{ from: 'bot', words: words.slice(0, i + 1) }]);
+      i++;
+      if (i === words.length) {
+        clearInterval(interval);
+        setPlaceholder('Spør meg om Skillhouse...');
+      }
+    }, 250);
+  }, []);
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+    const question = input.trim();
+    setInput('');
+    setMessageCount((count) => count + 1);
+
+    setMessages((prev) => {
+      const updated = [
+        { from: 'user', text: question },
+        ...prev
+      ];
+      return updated.slice(0, 6);
+    });
+
+    const words = "Takk for spørsmålet! Skillhouse leverer rådgivning innen teknologi, ingeniørfag og salg.".split(' ');
+    let i = 0;
+    const interval = setInterval(() => {
+      setMessages((prev) => {
+        const existing = prev.filter((m) => m.from !== 'bot');
+        const botMsg = { from: 'bot', words: words.slice(0, i + 1) };
+        return [botMsg, ...existing].slice(0, 6);
+      });
+      i++;
+      if (i === words.length) {
+        clearInterval(interval);
+        setPlaceholder(
+          messageCount + 1 >= 3 ? 'Vil du høre en suksesshistorie?' : 'Lurer du på noe annet?'
+        );
+      }
+    }, 250);
+  };
 
   return (
-    <>
-      <Head>
-        <title>SkillHouse</title>
-        <meta name="description" content="SkillHouse InfoPage" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className="relative min-h-screen bg-[#2e2f32] text-white font-inter overflow-hidden">
-        <div className="absolute bottom-4 right-4 text-white/30 text-xs select-none z-10">
-          SkillHouse
-        </div>
-
-        <div
-          ref={containerRef}
-          className="flex flex-col-reverse items-center justify-end max-h-[80vh] overflow-y-auto space-y-4 space-y-reverse px-4 pt-20 pb-32"
-        >
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`w-full max-w-2xl fade-in px-2 ${
-                msg.sender === "user" ? "text-right" : "text-left"
-              }`}
-            >
-              <span className="inline-block bg-[#1a1a1a] px-4 py-2 rounded-2xl">
-                {msg.text}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 flex items-center z-20"
-        >
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={placeholder}
-            className="flex-1 p-4 rounded-full bg-[#1a1a1a] text-white placeholder-white/40 outline-none shadow-md"
-          />
-          <button
-            type="submit"
-            className="ml-4 w-10 h-10 bg-[#2bb77b] text-white rounded-md flex items-center justify-center text-xl shadow-md hover:bg-[#28a06d] transition"
+    <main className="min-h-screen flex flex-col items-center px-4 pt-[40vh] relative bg-[#312f2f] text-skillwhite font-sans overflow-hidden">
+      <div className="w-full max-w-2xl flex flex-col items-start space-y-4 max-h-[50vh] overflow-y-auto pr-2">
+        {[...messages].reverse().map((msg, i) => (
+          <p
+            key={i}
+            className={`whitespace-pre-wrap transition-opacity duration-500 ${
+              msg.from === 'bot' ? 'italic' : 'font-semibold'
+            }`}
           >
-            →
-          </button>
-        </form>
-      </main>
-    </>
+            {msg.words
+              ? msg.words.map((word, j) => (
+                  <span
+                    key={j}
+                    className="inline-block opacity-0 animate-fade-in"
+                    style={{ animationDelay: `${j * 150}ms` }}
+                  >
+                    {word + ' '}
+                  </span>
+                ))
+              : msg.text}
+          </p>
+        ))}
+      </div>
+      <div className="w-full max-w-2xl mt-8 flex items-center">
+        <input
+          type="text"
+          className="bg-transparent border-none text-skillwhite placeholder-gray-500 focus:outline-none flex-1 text-lg"
+          placeholder={placeholder}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+        />
+        <button
+          onClick={handleSend}
+          className="ml-4 p-2 bg-skillgreen rounded-md hover:bg-opacity-80 transition"
+          aria-label="Send"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-skillwhite" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14m-7-7l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+      <div className="absolute bottom-4 right-4 opacity-50">
+        <img src="/skillhouse-logo.svg" alt="Skillhouse logo" className="h-5" />
+      </div>
+    </main>
   );
 }
