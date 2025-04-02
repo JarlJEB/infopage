@@ -7,7 +7,7 @@ module.exports = {
         skillgreen: "#2bb77b",
         skillwhite: "#fcfcf2",
         skilldark: "#312f2f"
-      }
+      },
     },
   },
   plugins: [],
