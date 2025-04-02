@@ -1,103 +1,95 @@
-import { useState, useEffect } from 'react';
+// pages/index.js
+import { useState, useEffect, useRef } from "react";
+import Head from "next/head";
 
-export default function InfoPage() {
+export default function Home() {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [placeholder, setPlaceholder] = useState('');
-  const [messageCount, setMessageCount] = useState(0);
+  const [input, setInput] = useState("");
+  const [placeholder, setPlaceholder] = useState("Spør meg om Skillhouse...");
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    const intro = "Hei! Hva lurer du på?";
-    const words = intro.split(' ');
-    let i = 0;
-    const interval = setInterval(() => {
-      setMessages([{ from: 'bot', words: words.slice(0, i + 1) }]);
-      i++;
-      if (i === words.length) {
-        clearInterval(interval);
-        setPlaceholder('Spør meg om Skillhouse...');
-      }
-    }, 250);
-  }, []);
-
-  const handleSend = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!input.trim()) return;
-    const question = input.trim();
-    setInput('');
-    setMessageCount((count) => count + 1);
 
-    setMessages((prev) => {
-      const updated = [
-        { from: 'user', text: question },
-        ...prev
-      ];
-      return updated.slice(0, 6);
+    const userMessage = input;
+    setMessages((prev) => [
+      { sender: "user", text: userMessage },
+      ...prev.slice(0, 2),
+    ]);
+    setInput("");
+    setPlaceholder("Takk! Spør gjerne om noe mer...");
+
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userMessage }),
     });
 
-    const words = "Takk for spørsmålet! Skillhouse leverer rådgivning innen teknologi, ingeniørfag og salg.".split(' ');
-    let i = 0;
-    const interval = setInterval(() => {
-      setMessages((prev) => {
-        const existing = prev.filter((m) => m.from !== 'bot');
-        const botMsg = { from: 'bot', words: words.slice(0, i + 1) };
-        return [botMsg, ...existing].slice(0, 6);
-      });
-      i++;
-      if (i === words.length) {
-        clearInterval(interval);
-        setPlaceholder(
-          messageCount + 1 >= 3 ? 'Vil du høre en suksesshistorie?' : 'Lurer du på noe annet?'
-        );
-      }
-    }, 250);
+    const data = await response.json();
+    setMessages((prev) => [
+      { sender: "bot", text: data.reply },
+      ...prev.slice(0, 2),
+    ]);
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center px-4 pt-[40vh] relative bg-[#312f2f] text-skillwhite font-sans overflow-hidden">
-      <div className="w-full max-w-2xl flex flex-col items-start space-y-4 max-h-[50vh] overflow-y-auto scrollbar-hide pr-2">
-        {messages.map((msg, i) => (
-          <p
-            key={i}
-            className={`whitespace-pre-wrap transition-opacity duration-500 ${
-              msg.from === 'bot' ? 'italic' : 'font-semibold'
-            }`}
-          >
-            {msg.words
-              ? msg.words.map((word, j) => (
-                  <span
-                    key={j}
-                    className="inline-block opacity-0 animate-fade-in"
-                    style={{ animationDelay: `${j * 150}ms` }}
-                  >
-                    {word + ' '}
-                  </span>
-                ))
-              : msg.text}
-          </p>
-        ))}
-      </div>
-      <div className="w-full max-w-2xl mt-8 flex items-center">
-        <input
-          type="text"
-          className="bg-transparent border-none text-skillwhite placeholder-gray-500 focus:outline-none flex-1 text-lg"
-          placeholder={placeholder}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-        />
-        <button
-          onClick={handleSend}
-          className="ml-4 p-2 bg-skillgreen rounded-md hover:bg-opacity-80 transition"
-          aria-label="Send"
+    <>
+      <Head>
+        <title>SkillHouse</title>
+        <meta name="description" content="SkillHouse InfoPage" />
+      </Head>
+
+      <main className="relative min-h-screen bg-[#312f2f] font-inter text-white overflow-hidden">
+        {/* Logo */}
+        <div className="absolute bottom-4 right-4 text-xs text-white/30 z-10 select-none">
+          <img
+            src="/Skillhouse_Logo_Use on Dark.svg"
+            alt="Skillhouse logo"
+            className="w-24 opacity-30"
+          />
+        </div>
+
+        {/* Input (låst i toppen) */}
+        <form
+          onSubmit={handleSubmit}
+          className="absolute top-[60vh] left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 flex items-center z-20"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-skillwhite" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14m-7-7l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-      <div className="absolute bottom-4 right-4 opacity-50">
-        <img src="/skillhouse-logo.svg" alt="Skillhouse logo" className="h-5" />
-      </div>
-    </main>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={placeholder}
+            className="flex-1 p-4 rounded-full bg-[#1a1a1a] text-white placeholder-white/40 outline-none shadow-md"
+          />
+          <button
+            type="submit"
+            className="ml-4 w-10 h-10 bg-[#2bb77b] text-white rounded-md flex items-center justify-center text-xl shadow-md hover:bg-[#28a06d] transition"
+          >
+            →
+          </button>
+        </form>
+
+        {/* Chatlog under input, vokser oppover */}
+        <div
+          ref={containerRef}
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 pb-32 pt-6 flex flex-col-reverse gap-3 items-start overflow-hidden"
+          style={{ maxHeight: "calc(60vh - 6rem)" }}
+        >
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`w-full fade-in text-sm ${
+                msg.sender === "user" ? "text-right" : "text-left"
+              }`}
+            >
+              <span className="inline-block italic text-white bg-[#1a1a1a] px-4 py-2 rounded-2xl">
+                {msg.text}
+              </span>
+            </div>
+          ))}
+        </div>
+      </main>
+    </>
   );
 }
