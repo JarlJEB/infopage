@@ -1,103 +1,78 @@
-import { useState, useEffect } from 'react';
+// pages/index.js
+import { useState, useEffect, useRef } from "react";
 
-export default function InfoPage() {
+export default function Home() {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [placeholder, setPlaceholder] = useState('');
-  const [messageCount, setMessageCount] = useState(0);
+  const [input, setInput] = useState("");
+  const [placeholder, setPlaceholder] = useState("Hva lurer du på?");
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    const intro = "Hei! Hva lurer du på?";
-    const words = intro.split(' ');
-    let i = 0;
-    const interval = setInterval(() => {
-      setMessages([{ from: 'bot', words: words.slice(0, i + 1) }]);
-      i++;
-      if (i === words.length) {
-        clearInterval(interval);
-        setPlaceholder('Spør meg om Skillhouse...');
-      }
-    }, 250);
-  }, []);
-
-  const handleSend = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!input.trim()) return;
-    const question = input.trim();
-    setInput('');
-    setMessageCount((count) => count + 1);
 
-    setMessages((prev) => {
-      const updated = [
-        { from: 'user', text: question },
-        ...prev
-      ];
-      return updated.slice(0, 6);
+    const userMessage = input;
+    setMessages((prev) => [
+      ...prev,
+      { sender: "user", text: userMessage },
+    ]);
+    setInput("");
+    setPlaceholder("Takk! Spør gjerne om noe mer...");
+
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userMessage }),
     });
 
-    const words = "Takk for spørsmålet! Skillhouse leverer rådgivning innen teknologi, ingeniørfag og salg.".split(' ');
-    let i = 0;
-    const interval = setInterval(() => {
-      setMessages((prev) => {
-        const existing = prev.filter((m) => m.from !== 'bot');
-        const botMsg = { from: 'bot', words: words.slice(0, i + 1) };
-        return [botMsg, ...existing].slice(0, 6);
-      });
-      i++;
-      if (i === words.length) {
-        clearInterval(interval);
-        setPlaceholder(
-          messageCount + 1 >= 3 ? 'Vil du høre en suksesshistorie?' : 'Lurer du på noe annet?'
-        );
-      }
-    }, 250);
+    const data = await response.json();
+    setMessages((prev) => [
+      ...prev,
+      { sender: "bot", text: data.reply },
+    ]);
   };
 
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
-    <main className="min-h-screen flex flex-col items-center px-4 pt-[40vh] relative bg-[#312f2f] text-skillwhite font-sans overflow-hidden">
-      <div className="w-full max-w-2xl flex flex-col items-start space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-        {[...messages].reverse().map((msg, i) => (
-          <p
-            key={i}
-            className={`whitespace-pre-wrap transition-opacity duration-500 ${
-              msg.from === 'bot' ? 'italic' : 'font-semibold'
-            }`}
-          >
-            {msg.words
-              ? msg.words.map((word, j) => (
-                  <span
-                    key={j}
-                    className="inline-block opacity-0 animate-fade-in"
-                    style={{ animationDelay: `${j * 150}ms` }}
-                  >
-                    {word + ' '}
-                  </span>
-                ))
-              : msg.text}
-          </p>
-        ))}
-      </div>
-      <div className="w-full max-w-2xl mt-8 flex items-center">
-        <input
-          type="text"
-          className="bg-transparent border-none text-skillwhite placeholder-gray-500 focus:outline-none flex-1 text-lg"
-          placeholder={placeholder}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-        />
-        <button
-          onClick={handleSend}
-          className="ml-4 p-2 bg-skillgreen rounded-md hover:bg-opacity-80 transition"
-          aria-label="Send"
+    <div className="min-h-screen bg-[#2e2f32] text-white flex items-center justify-center px-4">
+      <div className="w-full max-w-2xl h-[80vh] flex flex-col border border-gray-700 rounded-2xl overflow-hidden shadow-lg">
+        <div
+          ref={containerRef}
+          className="flex-1 overflow-y-auto p-4 space-y-4"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-skillwhite" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14m-7-7l7 7-7 7" />
-          </svg>
-        </button>
+          {messages.map((msg, i) => (
+            <div key={i} className={`fade-in ${msg.sender === "user" ? "text-right" : "text-left"}`}>
+              <span className="inline-block bg-gray-800 px-4 py-2 rounded-2xl">
+                {msg.text}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          className="border-t border-gray-700 p-4 bg-[#2e2f32] flex items-center"
+        >
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={placeholder}
+            className="flex-1 p-3 rounded-full bg-gray-900 text-white placeholder-gray-500 outline-none"
+          />
+          <button
+            type="submit"
+            className="ml-4 text-green-400 hover:text-green-300 transition"
+          >
+            →
+          </button>
+        </form>
       </div>
-      <div className="absolute bottom-4 right-4 opacity-50">
-        <img src="/skillhouse-logo.svg" alt="Skillhouse logo" className="h-5" />
-      </div>
-    </main>
+    </div>
   );
 }
