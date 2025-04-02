@@ -55,7 +55,7 @@ export default function InfoPage() {
   return (
     <main className="min-h-screen flex flex-col items-center px-4 pt-[40vh] relative bg-[#312f2f] text-skillwhite font-sans overflow-hidden">
       <div className="w-full max-w-2xl flex flex-col items-start space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-        {messages.map((msg, i) => (
+        {[...messages].reverse().map((msg, i) => (
           <p
             key={i}
             className={`whitespace-pre-wrap transition-opacity duration-500 ${
