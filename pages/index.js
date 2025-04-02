@@ -1,3 +1,4 @@
+// Versjon 8: Oppdatert inputposisjon og loggflyt
 import { useState, useEffect } from 'react';
 
 export default function InfoPage() {
