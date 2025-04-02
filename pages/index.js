@@ -3,36 +3,33 @@ import { useState } from "react";
 
 export default function Home() {
   const [messages, setMessages] = useState([
-    { from: "bot", words: ["Hei!", "Hva", "lurer", "du", "på?"] },
+    { type: "bot", words: ["Hei!", "Hva", "lurer", "du", "på?"] },
   ]);
   const [input, setInput] = useState("");
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!input.trim()) return;
-    const question = input.trim();
+    const newMessage = { type: "user", text: input.trim() };
+    setMessages((prev) => [...prev, newMessage]);
     setInput("");
-    setMessages((prev) => [{ from: "user", text: question }, ...prev]);
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
-    });
-    const data = await res.json();
-    const words = data.answer.split(" ");
-
+    const answer = "Skillhouse tilbyr rekruttering og konsulenttjenester.";
+    const words = answer.split(" ");
     let i = 0;
-    const reveal = () => {
-      setMessages((prev) => [{ from: "bot", words: words.slice(0, i + 1) }, ...prev.filter(m => m.from !== "bot" || !m.words)]);
-      if (++i < words.length) setTimeout(reveal, 180);
+    const animate = () => {
+      setMessages((prev) => [
+        ...prev.filter((m) => m.type !== "bot"),
+        { type: "bot", words: words.slice(0, i + 1) },
+      ]);
+      if (++i < words.length) setTimeout(animate, 160);
     };
-    setTimeout(reveal, 400);
+    setTimeout(animate, 300);
   };
 
   return (
-    <div className="min-h-screen bg-skilldark text-skillwhite font-sans relative flex flex-col items-center overflow-hidden">
+    <div className="min-h-screen bg-skilldark text-skillwhite font-sans flex flex-col items-center relative overflow-hidden">
       <div className="w-full max-w-2xl px-6 pt-[25vh] pb-36 space-y-6">
-        {[...messages].reverse().map((msg, i) => (
+        {messages.map((msg, i) => (
           <div key={i} className="text-[15px]">
             {msg.text && (
               <p className="bg-[#403d3d] rounded-xl px-4 py-2 inline-block">{msg.text}</p>
