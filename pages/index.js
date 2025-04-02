@@ -50,17 +50,17 @@ export default function Home() {
           />
         </div>
 
-        {/* Input (låst i toppen) */}
+        {/* Input (låst på 30vh) */}
         <form
           onSubmit={handleSubmit}
-          className="absolute top-[60vh] left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 flex items-center z-20"
+          className="absolute top-[30vh] left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 flex items-center z-20"
         >
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={placeholder}
-            className="flex-1 p-4 rounded-full bg-[#1a1a1a] text-white placeholder-white/40 outline-none shadow-md"
+            className="flex-1 p-4 rounded-full bg-[#1a1a1a] text-white placeholder-white/40 outline-none shadow-md text-base"
           />
           <button
             type="submit"
@@ -74,7 +74,7 @@ export default function Home() {
         <div
           ref={containerRef}
           className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 pb-32 pt-6 flex flex-col-reverse gap-3 items-start overflow-hidden"
-          style={{ maxHeight: "calc(60vh - 6rem)" }}
+          style={{ maxHeight: "calc(30vh - 6rem)" }}
         >
           {messages.map((msg, i) => (
             <div
@@ -83,7 +83,7 @@ export default function Home() {
                 msg.sender === "user" ? "text-right" : "text-left"
               }`}
             >
-              <span className="inline-block italic text-white bg-[#1a1a1a] px-4 py-2 rounded-2xl">
+              <span className={`inline-block ${msg.sender === "bot" ? "italic" : ""}`}>
                 {msg.text}
               </span>
             </div>
